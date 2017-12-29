@@ -89,15 +89,28 @@ public class MyView extends View{
                   temp.set(x,y);
                   mMoveCircle.set(temp);
                    distance = MathUtil.getPointDis(mFixedCircle,mMoveCircle);
-                    if(distance> fRadius){
+                    if(distance> fRadius && distance > longDis){
                         isDraw  = true;
                         changeRadius(distance);
                         invalidate();
+                    }else if(distance>fRadius && distance<longDis){
+                        isDraw = true;
+                        changeRadius(distance);
+                        invalidate();
+
+                    }else{
+                        isDraw = false;
                     }
                    invalidate();
                  break;
              case MotionEvent.ACTION_UP:
-                 anim();
+                 if(distance> fRadius && distance > longDis){
+                     anim();
+                 }else if(distance>fRadius && distance<longDis){
+                   anim2();
+                 }else{
+                     anim2();
+                 }
                  break;
              case MotionEvent.ACTION_DOWN:
                  float x1 = event.getX();
@@ -147,6 +160,7 @@ public class MyView extends View{
 
         canvas.drawPath(path, paint);
     }
+    //固定圆移动到拖拉圆
     private void anim(){
         final float ran = (mFixedCircle.y - mMoveCircle.y )/(mFixedCircle.x - mMoveCircle.x);
         ValueAnimator valueAnimator = ValueAnimator.ofFloat(mFixedCircle.x, mMoveCircle.x);
@@ -165,11 +179,32 @@ public class MyView extends View{
         });
         valueAnimator.start();
     }
+    //拖拉圆移动到固定圆
+    private void anim2(){
+        final float ran = (mFixedCircle.y - mMoveCircle.y )/(mFixedCircle.x - mMoveCircle.x);
+        ValueAnimator valueAnimator = ValueAnimator.ofFloat( mMoveCircle.x,mFixedCircle.x);
+        valueAnimator.setDuration(300);
+        valueAnimator.setInterpolator(new BounceInterpolator());
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                float x = (float) valueAnimator.getAnimatedValue();
+                float y =  mMoveCircle.y + ran*(x - mMoveCircle.x);
+                mMoveCircle.set(x,y);
+                setPoint();
+                fRadius = 20;
+                invalidate();
+            }
+        });
+        valueAnimator.start();
+    }
 
     private void changeRadius(float distance) {
-        float d = distance/longDis;
+        float d = Math.abs(distance/longDis);
         if(d >= 0.8){
-            fRadius = fRadius>5? (int) ((1- d*0.01f)*fRadius):5;
+            fRadius = fRadius<5?5:(int) ((1- d*0.02f)*fRadius);
+        }else {
+            fRadius = fRadius<10? 10:(int) ((1- d*0.02f)*fRadius);
         }
     }
 
